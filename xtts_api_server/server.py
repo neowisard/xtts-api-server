@@ -49,7 +49,7 @@ XTTS = TTSWrapper(OUTPUT_FOLDER, SPEAKER_FOLDER, MODEL_FOLDER, LOWVRAM_MODE, MOD
 # Check for old format model version
 XTTS.model_version = XTTS.check_model_version_old_format(MODEL_VERSION)
 MODEL_VERSION = XTTS.model_version
-language str
+language: str
 language = LANG
 
 # Create version string
