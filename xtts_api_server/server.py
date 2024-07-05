@@ -284,18 +284,17 @@ async def tts_to_audio(request: SynthesisRequest, background_tasks: BackgroundTa
      #                               detail="Language code sent is either unsupported or misspelled.")
 
             speaker_wav = XTTS.get_speaker_wav(request.voice)
-            language = "ru"
+
 
             if stream.is_playing() and not STREAM_PLAY_SYNC:
                 stream.stop()
                 stream = TextToAudioStream(engine)
 
             engine.set_voice(speaker_wav)
-            engine.language = "ru"
 
             # Start streaming, works only on your local computer.
             stream.feed(request.input)
-            play_stream(stream, language)
+            play_stream(stream)
 
             # It's a hack, just send 1 second of silence so that there is no sillyTavern error.
             this_dir = Path(__file__).parent.resolve()

@@ -20,7 +20,8 @@ only cuda
 2.  Nvidia_pstate for Tesla P40 used  (https://github.com/sasha0552/nvidia-pstate)
 3. Voice examples added
 4. TTS to OpenAI endpoint switched
-5. Arg language removed , use  
+5. Arg language removed , use   tts_func.py to set
+6. Cache work is fixed (?)
 
 ## Starting Server
 
