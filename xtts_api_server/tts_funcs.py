@@ -449,8 +449,8 @@ class TTSWrapper:
 
     # GENERATION FUNCS
     def clean_text(self, text):
-        # Remove asterisks and line breaks
-        text = re.sub(r'[\*\r\n]', '', text)
+        # Remove asterisks, line breaks, and trailing periods
+        text = re.sub(r'[\*\r\n.]', '', text)
         # Replace double quotes with single quotes and correct punctuation around quotes
         text = re.sub(r'"\s?(.*?)\s?"', r"'\1'", text)
         return text
