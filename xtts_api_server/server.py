@@ -258,7 +258,6 @@ async def tts_stream(request: Request, text: str = Query(), speaker_wav: str = Q
         chunks = XTTS.process_tts_to_file(
             text=text,
             speaker_name_or_path=speaker_wav,
-            language=LANG,
             stream=True,
         )
         # Write file header to the output stream.
@@ -285,18 +284,17 @@ async def tts_to_audio(request: SynthesisRequest, background_tasks: BackgroundTa
      #                               detail="Language code sent is either unsupported or misspelled.")
 
             speaker_wav = XTTS.get_speaker_wav(request.voice)
-            language = LANG
+
 
             if stream.is_playing() and not STREAM_PLAY_SYNC:
                 stream.stop()
                 stream = TextToAudioStream(engine)
 
             engine.set_voice(speaker_wav)
-            engine.language = LANG
 
             # Start streaming, works only on your local computer.
             stream.feed(request.input)
-            play_stream(stream, language)
+            play_stream(stream)
 
             # It's a hack, just send 1 second of silence so that there is no sillyTavern error.
             this_dir = Path(__file__).parent.resolve()
@@ -324,7 +322,6 @@ async def tts_to_audio(request: SynthesisRequest, background_tasks: BackgroundTa
             output_file_path = XTTS.process_tts_to_file(
                 text=request.input,
                 speaker_name_or_path=request.voice,
-                language=LANG,
                 file_name_or_path=f'{str(uuid4())}.wav'
             )
 
@@ -361,7 +358,6 @@ async def tts_to_file(request: SynthesisFileRequest):
         output_file = XTTS.process_tts_to_file(
             text=request.input,
             speaker_name_or_path=request.voice,
-            language=LANG,
             file_name_or_path=request.file_name_or_path  # The user-provided path to save the file is used here.
         )
         set_pstate_low()
