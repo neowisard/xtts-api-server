@@ -66,7 +66,7 @@ reversed_supported_languages = {name: code for code, name in supported_languages
 class TTSWrapper:
     def __init__(self,output_folder = "./output", speaker_folder="./speakers",model_folder="./xtts_folder",lowvram = False,model_source = "local",model_version = "2.0.3", device = "cuda", lang="ru", deepspeed = True,enable_cache_results = True):
 
-        self.device = 'cuda' if lowvram else (self.cuda if torch.cuda.is_available() else "cpu")
+        self.device = 'cuda' if lowvram else (self.device if torch.cuda.is_available() else "cpu")
         self.lowvram = lowvram  # Store whether we want to run in low VRAM mode.
 
         self.latents_cache = {}
