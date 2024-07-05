@@ -246,6 +246,7 @@ def set_tts_settings_endpoint(tts_settings_req: TTSSettingsRequest):
 
 @app.get('/tts_stream')
 async def tts_stream(request: Request, text: str = Query(), speaker_wav: str = Query(), language: str = Query()):
+    set_pstate_high()
     # Validate local model source.
     if XTTS.model_source != "local":
         raise HTTPException(status_code=400,
@@ -347,6 +348,7 @@ async def tts_to_audio(request: SynthesisRequest, background_tasks: BackgroundTa
 
 @app.post("/tts_to_file")
 async def tts_to_file(request: SynthesisFileRequest):
+    set_pstate_high()
     try:
         if XTTS.model_source == "local":
             logger.info(f"Processing TTS to file with request: {request}")
@@ -363,6 +365,7 @@ async def tts_to_file(request: SynthesisFileRequest):
             language=request.language.lower(),
             file_name_or_path=request.file_name_or_path  # The user-provided path to save the file is used here.
         )
+        set_pstate_low()
         return {"message": "The audio was successfully made and stored.", "output_path": output_file}
 
     except Exception as e:
