@@ -13,82 +13,14 @@ If you are looking for an option for normal XTTS use look here [https://github.c
 **Recently I have little time to do this project, so I advise you to get acquainted with a [similar project](https://github.com/erew123/alltalk_tts)**
 
 ## Changelog
+from original , for API with Home Assistant TTS
 
-You can keep track of all changes on the [release page](https://github.com/daswer123/xtts-api-server/releases)
-
-## TODO
-- [x] Make it possible to change generation parameters through the generation request and through a different endpoint
-
-## Installation
-
-Simple installation :
-
-```bash
-pip install xtts-api-server
-```
-
-This will install all the necessary dependencies, including a **CPU support only** version of PyTorch
-
-I recommend that you install the **GPU version** to improve processing speed ( up to 3 times faster )
-
-### Windows
-```bash
-python -m venv venv
-venv\Scripts\activate
-pip install xtts-api-server
-pip install torch==2.1.1+cu118 torchaudio==2.1.1+cu118 --index-url https://download.pytorch.org/whl/cu118
-```
-
-### Linux
-```bash
-sudo apt install -y python3-dev python3-venv portaudio19-dev
-python -m venv venv
-source venv\bin\activate
-pip install xtts-api-server
-pip install torch==2.1.1+cu118 torchaudio==2.1.1+cu118 --index-url https://download.pytorch.org/whl/cu118
-```
-
-### Manual
-```bash
-# Clone REPO
-git clone https://github.com/daswer123/xtts-api-server
-cd xtts-api-server
-# Create virtual env
-python -m venv venv
-venv/scripts/activate or source venv/bin/activate
-# Install deps
-pip install -r requirements.txt
-pip install torch==2.1.1+cu118 torchaudio==2.1.1+cu118 --index-url https://download.pytorch.org/whl/cu118
-# Launch server
-python -m xtts_api_server
- 
-```
-
-# Use Docker image with Docker Compose
-
-A Dockerfile is provided to build a Docker image, and a docker-compose.yml file is provided to run the server with Docker Compose as a service.
-
-You can build the image with the following command:
-
-```bash
-mkdir xtts-api-server
-cd xtts-api-server
-docker run -d daswer123/xtts-api-server
-
-```
-
-OR
-
-```bash
-cd docker
-docker compose build
-```
-
-Then you can run the server with the following command:
-
-```bash
-docker compose up # or with -d to run in background
-```
+only cuda
+VGPU mem leak fixed
+Nvidia_pstate for Tesla P40 used  (https://github.com/sasha0552/nvidia-pstate) 
+Voice examples added
+TTS to OpenAI endpoint switched  
+Arg language removed , use  
 
 ## Starting Server
 
