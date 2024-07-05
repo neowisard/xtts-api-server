@@ -362,8 +362,8 @@ async def tts_to_file(request: SynthesisFileRequest):
 
         # Now use process_tts_to_file for saving the file.
         output_file = XTTS.process_tts_to_file(
-            text=request.text,
-            speaker_name_or_path=request.speaker_wav,
+            text=request.input,
+            speaker_name_or_path=request.voice,
             language=request.language.lower(),
             file_name_or_path=request.file_name_or_path  # The user-provided path to save the file is used here.
         )
