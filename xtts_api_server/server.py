@@ -335,7 +335,7 @@ async def tts_to_audio(request: SynthesisRequest, background_tasks: BackgroundTa
 
             # Return the file in the response
             set_pstate_low()
-            torch.cuda.empty_cache()
+
             return FileResponse(
                 path=output_file_path,
                 media_type='audio/wav',
@@ -367,7 +367,7 @@ async def tts_to_file(request: SynthesisFileRequest):
             file_name_or_path=request.file_name_or_path  # The user-provided path to save the file is used here.
         )
         set_pstate_low()
-        torch.cuda.empty_cache()
+
         return {"message": "The audio was successfully made and stored.", "output_path": output_file}
 
     except Exception as e:
