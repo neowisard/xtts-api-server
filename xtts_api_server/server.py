@@ -304,7 +304,7 @@ async def tts_to_audio(request: SynthesisRequest, background_tasks: BackgroundTa
             this_dir = Path(__file__).parent.resolve()
             output = this_dir / "RealtimeTTS" / "silence.wav"
             set_pstate_low()
-            torch.cuda.empty_cache()
+
             return FileResponse(
                 path=output,
                 media_type='audio/wav',
@@ -333,7 +333,7 @@ async def tts_to_audio(request: SynthesisRequest, background_tasks: BackgroundTa
             if not XTTS.enable_cache_results:
                 background_tasks.add_task(os.unlink, output_file_path)
             set_pstate_low()
-            torch.cuda.empty_cache()
+
             # Return the file in the response
             return FileResponse(
                 path=output_file_path,

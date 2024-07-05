@@ -609,7 +609,7 @@ class TTSWrapper:
 
             # After generation completes successfully...
             self.update_cache(text_params, output_file)
-
+            torch.cuda.empty_cache()
             return output_file
 
         except Exception as e:
