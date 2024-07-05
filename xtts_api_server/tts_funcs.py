@@ -44,7 +44,8 @@ supported_languages = {
     "ja":"Japanese",
     "ko":"Korean",
     "hu":"Hungarian",
-    "hi":"Hindi"
+    "hi":"Hindi",
+    "":""
 }
 
 default_tts_settings = {
@@ -53,7 +54,7 @@ default_tts_settings = {
     "repetition_penalty": 5.0,
     "top_k" : 50,
     "top_p" : 0.85,
-    "speed" : 1,
+    "speed" : 1.25,
     "enable_text_splitting": True
 }
 
@@ -509,8 +510,8 @@ class TTSWrapper:
 
     def api_generation(self,text,speaker_wav,language,output_file):
         self.model.tts_to_file(
-                text=text,
-                speaker_wav=speaker_wav,
+                text1=text,
+                speaker_wav1=speaker_wav,
                 language=language,
                 file_path=output_file,
         )
