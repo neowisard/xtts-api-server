@@ -258,7 +258,6 @@ async def tts_stream(request: Request, text: str = Query(), speaker_wav: str = Q
         chunks = XTTS.process_tts_to_file(
             text=text,
             speaker_name_or_path=speaker_wav,
-            language="ru",
             stream=True,
         )
         # Write file header to the output stream.
@@ -324,7 +323,6 @@ async def tts_to_audio(request: SynthesisRequest, background_tasks: BackgroundTa
             output_file_path = XTTS.process_tts_to_file(
                 text=request.input,
                 speaker_name_or_path=request.voice,
-                language="ru",
                 file_name_or_path=f'{str(uuid4())}.wav'
             )
 
@@ -361,7 +359,6 @@ async def tts_to_file(request: SynthesisFileRequest):
         output_file = XTTS.process_tts_to_file(
             text=request.input,
             speaker_name_or_path=request.voice,
-            language="ru",
             file_name_or_path=request.file_name_or_path  # The user-provided path to save the file is used here.
         )
         set_pstate_low()

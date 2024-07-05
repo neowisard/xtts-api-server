@@ -449,13 +449,13 @@ class TTSWrapper:
         text = re.sub(r'"\s?(.*?)\s?"', r"'\1'", text)
         return text
 
-    async def stream_generation(self,text,speaker_name,speaker_wav,language,output_file):
+    async def stream_generation(self,text,speaker_name,speaker_wav,output_file):
         # Log time
         generate_start_time = time.time()  # Record the start time of loading the model
 
         gpt_cond_latent, speaker_embedding = self.get_or_create_latents(speaker_name, speaker_wav)
         file_chunks = []
-
+        language = self.language
         chunks = self.model.inference_stream(
             text,
             language,
@@ -486,12 +486,12 @@ class TTSWrapper:
 
         logger.info(f"Processing time: {generate_elapsed_time:.2f} seconds.")
 
-    def local_generation(self,text,speaker_name,speaker_wav,language,output_file):
+    def local_generation(self,text,speaker_name,speaker_wav,output_file):
         # Log time
         generate_start_time = time.time()  # Record the start time of loading the model
 
         gpt_cond_latent, speaker_embedding = self.get_or_create_latents(speaker_name, speaker_wav)
-
+        language = self.language
         out = self.model.inference(
             text,
             language,
@@ -507,7 +507,8 @@ class TTSWrapper:
 
         logger.info(f"Processing time: {generate_elapsed_time:.2f} seconds.")
 
-    def api_generation(self,text,speaker_wav,language,output_file):
+    def api_generation(self,text,speaker_wav,output_file):
+        language = self.language
         self.model.tts_to_file(
                 text=text,
                 speaker_wav=speaker_wav,
@@ -543,7 +544,7 @@ class TTSWrapper:
 
 
     # MAIN FUNC
-    def process_tts_to_file(self, text, speaker_name_or_path, language, file_name_or_path="out.wav", stream=False):
+    def process_tts_to_file(self, text, speaker_name_or_path, file_name_or_path="out.wav", stream=False):
         try:
             speaker_wav = self.get_speaker_wav(speaker_name_or_path)
             # Determine output path based on whether a full path or a file name was provided
@@ -571,8 +572,7 @@ class TTSWrapper:
             # Generate a dictionary of the parameters to use for caching.
             text_params = {
               'text': clear_text,
-              'speaker_name_or_path': speaker_name_or_path,
-              'language': language
+              'speaker_name_or_path': speaker_name_or_path
             }
 
             # Check if results are already cached.
@@ -588,16 +588,16 @@ class TTSWrapper:
             if self.model_source == "local":
                 if stream:
                     async def stream_fn():
-                        async for chunk in self.stream_generation(clear_text,speaker_name_or_path,speaker_wav,language,output_file):
+                        async for chunk in self.stream_generation(clear_text,speaker_name_or_path,speaker_wav,output_file):
                             yield chunk
                         self.switch_model_device()
                         # After generation completes successfully...
                         self.update_cache(text_params,output_file)
                     return stream_fn()
                 else:
-                    self.local_generation(clear_text,speaker_name_or_path,speaker_wav,language,output_file)
+                    self.local_generation(clear_text,speaker_name_or_path,speaker_wav,output_file)
             else:
-                self.api_generation(clear_text,speaker_wav,language,output_file)
+                self.api_generation(clear_text,speaker_wav,output_file)
             
             self.switch_model_device() # Unload to CPU if lowram ON
             torch.cuda.empty_cache()
