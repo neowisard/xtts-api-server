@@ -4,7 +4,7 @@ This project is inspired by [silero-api-server](https://github.com/ouoertheo/sil
 
 This server was forked for HomeAssistant TTS  but you can use it for your needs
 
-**i not have programming skills **
+**i do not have programming skills **
 
 ## Changelog
 from original , for API with Home Assistant TTS
