@@ -45,7 +45,6 @@ supported_languages = {
     "ko":"Korean",
     "hu":"Hungarian",
     "hi":"Hindi",
-    "":""
 }
 
 default_tts_settings = {
