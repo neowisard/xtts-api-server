@@ -549,7 +549,7 @@ class TTSWrapper:
 
     # MAIN FUNC
     def process_tts_to_file(self, text, speaker_name_or_path, language, file_name_or_path="out.wav", stream=False):
-        set_pstate_high()
+  #      set_pstate_high()
         try:
             speaker_wav = self.get_speaker_wav(speaker_name_or_path)
             # Determine output path based on whether a full path or a file name was provided
@@ -612,7 +612,7 @@ class TTSWrapper:
             # After generation completes successfully...
             self.update_cache(text_params, output_file)
             torch.cuda.empty_cache()
-            set_pstate_low()
+#            set_pstate_low()
             return output_file
 
         except Exception as e:
