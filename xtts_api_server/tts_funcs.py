@@ -609,6 +609,7 @@ class TTSWrapper:
 
             # After generation completes successfully...
             self.update_cache(text_params, output_file)
+
             return output_file
 
         except Exception as e:
