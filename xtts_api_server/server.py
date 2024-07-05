@@ -294,7 +294,7 @@ async def tts_to_audio(request: SynthesisRequest, background_tasks: BackgroundTa
                 stream = TextToAudioStream(engine)
 
             engine.set_voice(speaker_wav)
-            engine.language = LANG.lower()
+            engine.language = LANG
 
             # Start streaming, works only on your local computer.
             stream.feed(request.input)
@@ -326,7 +326,7 @@ async def tts_to_audio(request: SynthesisRequest, background_tasks: BackgroundTa
             output_file_path = XTTS.process_tts_to_file(
                 text=request.input,
                 speaker_name_or_path=request.voice,
-                language=LANG.lower(),
+                language=LANG,
                 file_name_or_path=f'{str(uuid4())}.wav'
             )
 
