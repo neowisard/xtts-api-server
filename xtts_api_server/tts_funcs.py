@@ -69,8 +69,8 @@ class TTSWrapper:
         self.device = 'cuda' #if lowvram else (self.cuda if torch.cuda.is_available() else "cpu")
         self.lowvram = lowvram  # Store whether we want to run in low VRAM mode.
 
-        self.latents_cache = {} 
-
+        self.latents_cache = {}
+        self.model = TTS("tts_models/multilingual/multi-dataset/xtts_v2")
         self.model_source = model_source
         self.model_version = model_version
         self.tts_settings = default_tts_settings
