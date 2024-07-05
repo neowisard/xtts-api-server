@@ -2,15 +2,9 @@
 
 This project is inspired by [silero-api-server](https://github.com/ouoertheo/silero-api-server) and utilizes [XTTSv2](https://github.com/coqui-ai/TTS).
 
-This server was created for [SillyTavern](https://github.com/SillyTavern/SillyTavern) but you can use it for your needs
+This server was forked for HomeAssistant TTS  but you can use it for your needs
 
-Feel free to make PRs or use the code for your own needs
-
-There's a [google collab version](https://colab.research.google.com/drive/1b-X3q5miwYLVMuiH_T73odMO8cbtICEY?usp=sharing) you can use it if your computer is weak.
-
-If you are looking for an option for normal XTTS use look here [https://github.com/daswer123/xtts-webui](https://github.com/daswer123/xtts-webui)
-
-**Recently I have little time to do this project, so I advise you to get acquainted with a [similar project](https://github.com/erew123/alltalk_tts)**
+**i not have programming skills **
 
 ## Changelog
 from original , for API with Home Assistant TTS
