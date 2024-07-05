@@ -194,7 +194,7 @@ class TTSWrapper:
     
     def load_local_model(self,load=True):
         this_model_dir = Path(self.model_folder)
-
+        self.model = TTS("tts_models/multilingual/multi-dataset/xtts_v2")
         if self.isModelOfficial(self.model_version):
             download_model(this_model_dir,self.model_version)
             this_model_dir = this_model_dir
@@ -204,7 +204,10 @@ class TTSWrapper:
         checkpoint_dir = this_model_dir / f'{self.model_version}'
 
         config.load_json(str(config_path))
-        
+        if self.lowvram == False:
+            # Due to the fact that we create latents on the cpu and load them from the cuda we get an error
+            logger.info("Pre-create latents for all current speakers")
+            self.create_latents_for_all()
         self.model = Xtts.init_from_config(config)
         self.model.load_checkpoint(config,use_deepspeed=self.deepspeed, checkpoint_dir=str(checkpoint_dir))
         self.model.to(self.device)
