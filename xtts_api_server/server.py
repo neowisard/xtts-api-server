@@ -286,17 +286,14 @@ async def tts_to_audio(request: SynthesisRequest, background_tasks: BackgroundTa
                                     detail="Language code sent is either unsupported or misspelled.")
 
             speaker_wav = XTTS.get_speaker_wav(request.voice)
-            language = request.language
+            language = request.language.lower()
 
             if stream.is_playing() and not STREAM_PLAY_SYNC:
                 stream.stop()
                 stream = TextToAudioStream(engine)
 
             engine.set_voice(speaker_wav)
-            if language == "":
-                engine.language = "en"
-            else:
-                engine.language = request.language.lower()
+            engine.language = language
 
             # Start streaming, works only on your local computer.
             stream.feed(request.input)
@@ -331,8 +328,7 @@ async def tts_to_audio(request: SynthesisRequest, background_tasks: BackgroundTa
                 language=request.language.lower(),
                 file_name_or_path=f'{str(uuid4())}.wav'
             )
-            if language == "":
-                language = "en"
+
             if not XTTS.enable_cache_results:
                 background_tasks.add_task(os.unlink, output_file_path)
 
