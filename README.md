@@ -16,11 +16,11 @@ If you are looking for an option for normal XTTS use look here [https://github.c
 from original , for API with Home Assistant TTS
 
 only cuda
-VGPU mem leak fixed
-Nvidia_pstate for Tesla P40 used  (https://github.com/sasha0552/nvidia-pstate) 
-Voice examples added
-TTS to OpenAI endpoint switched  
-Arg language removed , use  
+1.  VGPU mem leak fixed
+2.  Nvidia_pstate for Tesla P40 used  (https://github.com/sasha0552/nvidia-pstate)
+3. Voice examples added
+4. TTS to OpenAI endpoint switched
+5. Arg language removed , use  
 
 ## Starting Server
 
