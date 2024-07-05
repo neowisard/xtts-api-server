@@ -2,7 +2,7 @@ from TTS.api import TTS
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
-from nvidia_pstate import set_pstate_low, set_pstate_high
+
 
 from pydantic import BaseModel
 import uvicorn
@@ -247,7 +247,7 @@ def set_tts_settings_endpoint(tts_settings_req: TTSSettingsRequest):
 @app.get('/tts_stream')
 async def tts_stream(request: Request, text: str = Query(), speaker_wav: str = Query(), language: str = Query()):
     # Validate local model source.
-    set_pstate_high()
+
     if XTTS.model_source != "local":
         raise HTTPException(status_code=400,
                             detail="HTTP Streaming is only supported for local models.")
@@ -277,7 +277,6 @@ async def tts_stream(request: Request, text: str = Query(), speaker_wav: str = Q
 
 @app.post("/v1/audio/speech")
 async def tts_to_audio(request: SynthesisRequest, background_tasks: BackgroundTasks):
-    set_pstate_high()
     if STREAM_MODE or STREAM_MODE_IMPROVE:
         try:
             global stream
@@ -303,7 +302,7 @@ async def tts_to_audio(request: SynthesisRequest, background_tasks: BackgroundTa
             # It's a hack, just send 1 second of silence so that there is no sillyTavern error.
             this_dir = Path(__file__).parent.resolve()
             output = this_dir / "RealtimeTTS" / "silence.wav"
-            set_pstate_low()
+
 
             return FileResponse(
                 path=output,
@@ -332,7 +331,7 @@ async def tts_to_audio(request: SynthesisRequest, background_tasks: BackgroundTa
 
             if not XTTS.enable_cache_results:
                 background_tasks.add_task(os.unlink, output_file_path)
-            set_pstate_low()
+
 
             # Return the file in the response
             return FileResponse(
@@ -348,7 +347,7 @@ async def tts_to_audio(request: SynthesisRequest, background_tasks: BackgroundTa
 
 @app.post("/tts_to_file")
 async def tts_to_file(request: SynthesisFileRequest):
-    set_pstate_high()
+
     try:
         if XTTS.model_source == "local":
             logger.info(f"Processing TTS to file with request: {request}")
@@ -365,7 +364,7 @@ async def tts_to_file(request: SynthesisFileRequest):
             language=LANG.lower(),
             file_name_or_path=request.file_name_or_path  # The user-provided path to save the file is used here.
         )
-        set_pstate_low()
+
         return {"message": "The audio was successfully made and stored.", "output_path": output_file}
 
     except Exception as e:
