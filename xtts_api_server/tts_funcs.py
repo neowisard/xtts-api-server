@@ -600,6 +600,7 @@ class TTSWrapper:
                 self.api_generation(clear_text,speaker_wav,language,output_file)
             
             self.switch_model_device() # Unload to CPU if lowram ON
+            torch.cuda.empty_cache()
 
             # After generation completes successfully...
             self.update_cache(text_params,output_file)
