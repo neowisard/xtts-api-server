@@ -32,7 +32,7 @@ MODEL_VERSION = os.getenv("MODEL_VERSION", "v2.0.3")
 LOWVRAM_MODE = os.getenv("LOWVRAM_MODE") == 'true'
 DEEPSPEED = os.getenv("DEEPSPEED") == 'true'
 USE_CACHE = os.getenv("USE_CACHE") == 'true'
-LANG = os.getenv("LANG", "ru")
+LANG = "ru"
 # STREAMING VARS
 STREAM_MODE = os.getenv("STREAM_MODE") == 'true'
 STREAM_MODE_IMPROVE = os.getenv("STREAM_MODE_IMPROVE") == 'true'
