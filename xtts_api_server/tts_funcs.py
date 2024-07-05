@@ -512,8 +512,8 @@ class TTSWrapper:
 
     def api_generation(self,text,speaker_wav,language,output_file):
         self.model.tts_to_file(
-                text1=text,
-                speaker_wav1=speaker_wav,
+                text=text,
+                speaker_wav=speaker_wav,
                 language=language,
                 file_path=output_file,
         )
