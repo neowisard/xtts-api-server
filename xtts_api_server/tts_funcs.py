@@ -81,14 +81,14 @@ class DateTimeNormalizer:
             date = parser.parse(text, fuzzy=True)
             return date.strftime('%Y-%m-%d')
         except ValueError:
-            return text
+            return text  # Возвращаем исходное значение, если не удалось распарсить дату
 
     def normalize_time(self, text: str) -> str:
         try:
             time = parser.parse(text)
             return time.strftime('%H:%M')
         except ValueError:
-            return text
+            return text  # Возвращаем исходное значение, если не удалось распарсить время
 
     def normalize_number(self, text: str) -> str:
         number_strings = re.findall(
