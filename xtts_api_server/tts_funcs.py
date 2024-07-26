@@ -90,25 +90,50 @@ class DateTimeNormalizer:
         except ValueError:
             return text  # Возвращаем исходное значение, если не удалось распарсить время
 
-    def normalize_number(self, text: str) -> str:
-        number_strings = re.findall(
-            r'(?<![a-zA-Z\d])\d+(?:\.\d+)?(?:(?:\s|\w)*?<d>.*?</d>)*(?!(?:[a-zA-Z\d\"\']|\s)*\'?/?>)', text)
+    def normalize_number(text: str) -> str:
+        number_strings = findall(
+            r'(?<![a-zA-Z\d])\d+(?:\.\d+)?(?:(?:\s|\w)*?<d>.*?</d>)*(?!(?:[a-zA-Z\d\"\']|\s)*\'?/?>)',
+            text)
+
         for number_string in number_strings:
             number_data = number_string.split(' ')
-            number = number_data[0]
+
+            number = num2words(number_data[0], lang=settings.language)
             number_gender = None
+
             inflected_words = []
+
             for i in range(1, len(number_data)):
                 if '<d>' not in number_data[i]:
                     inflected_words.append(number_data[i])
                     continue
-                word_to_declension = number_data[i][3:-4]
+
+                word_to_declension = morph.parse(number_data[i][3:-4])[0]
+
                 if not number_gender:
-                    number_gender = word_to_declension
+                    number_gender = word_to_declension.tag.gender
+
                 inflected_word = word_to_declension.make_agree_with_number(float(number_data[0]))
+
                 if inflected_word:
-                    inflected_words.append(inflected_word)
+                    word_to_declension = inflected_word
+
+                inflected_words.append(word_to_declension.word)
+
+            last_number_word = morph.parse(number.split(' ')[-1])[0]
+
+            if number_gender:
+                inclined_number = last_number_word.inflect({number_gender})
+
+                if inclined_number:
+                    numbers = number.split(' ')
+                    numbers.pop()
+                    numbers.append(inclined_number.word)
+                    number = ' '.join(numbers)
+
+            inflected_words.insert(0, number)
             text = text.replace(number_string, ' '.join(inflected_words))
+
         return text
 
     def translit_text(self, text: str) -> str:
@@ -123,8 +148,8 @@ class DateTimeNormalizer:
         text = " ".join(text.split())
         text = self.normalize_number(text)
         text = self.translit_text(text)
-        text = self.normalize_date(text)
-        text = self.normalize_time(text)
+        #text = self.normalize_date(text)
+        #text = self.normalize_time(text)
         return text
 
 
