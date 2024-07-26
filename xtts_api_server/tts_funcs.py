@@ -3,16 +3,18 @@
 import torch
 import torchaudio
 from nvidia_pstate import set_pstate_low, set_pstate_high
+from re import findall, sub
+from pymorphy2 import MorphAnalyzer
+from transliterate import translit
+from num2words import num2words
+from dateutil import parser
+from datetime import datetime
 
 from TTS.api import TTS
 
 from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
 from pathlib import Path
-from re import findall, sub
-from pymorphy2 import MorphAnalyzer
-from transliterate import translit
-from num2words import num2words
 
 from xtts_api_server.modeldownloader import download_model, check_tts_version
 
@@ -32,7 +34,7 @@ import numpy as np
 class InvalidSettingsError(Exception):
     pass
 
-LANG="ru"
+
 # List of supported language codes
 supported_languages = {
     "ar": "Arabic",
@@ -451,84 +453,71 @@ class TTSWrapper:
     def list_languages(self):
         return reversed_supported_languages
 
-    # GENERATION FUNCS
-   # morph = MorphAnalyzer()
+    # GENERATION TEXT FUNCS
+    def clean_text(self, text):
+        # Remove asterisks, line breaks, and trailing periods
+        normalizer = DateTimeNormalizer()
+        cleaned_text = normalizer.normalize(text)
 
-    def normalize_date(text: str) -> str:
-        return text
+      #  text = re.sub(r'[\*\r\n.]', '', text)
+      #  # Replace double quotes with single quotes and correct punctuation around quotes
+      #  text = re.sub(r'"\s?(.*?)\s?"', r"'\1'", text)
+        return cleaned_text
 
-    def normalize_time(text: str) -> str:
-        return text
+    class DateTimeNormalizer:
+        def __init__(self, lang='ru'):
+            self.lang = lang
 
-    def normalize_number(text: str) -> str:
-        number_strings = findall(
-            r'(?<![a-zA-Z\d])\d+(?:\.\d+)?(?:(?:\s|\w)*?<d>.*?</d>)*(?!(?:[a-zA-Z\d\"\']|\s)*\'?/?>)',
-            text)
+        def normalize_date(self, text: str) -> str:
+            try:
+                date = parser.parse(text, fuzzy=True)
+                return date.strftime('%Y-%m-%d')
+            except ValueError:
+                return text
 
-        for number_string in number_strings:
-            number_data = number_string.split(' ')
+        def normalize_time(self, text: str) -> str:
+            try:
+                time = parser.parse(text)
+                return time.strftime('%H:%M')
+            except ValueError:
+                return text
 
-            number = num2words(number_data[0], lang="ru")
-            number_gender = None
+        def normalize_number(self, text: str) -> str:
+            number_strings = re.findall(
+                r'(?<![a-zA-Z\d])\d+(?:\.\d+)?(?:(?:\s|\w)*?<d>.*?</d>)*(?!(?:[a-zA-Z\d\"\']|\s)*\'?/?>)', text)
+            for number_string in number_strings:
+                number_data = number_string.split(' ')
+                number = number_data[0]
+                number_gender = None
+                inflected_words = []
+                for i in range(1, len(number_data)):
+                    if '<d>' not in number_data[i]:
+                        inflected_words.append(number_data[i])
+                        continue
+                    word_to_declension = number_data[i][3:-4]
+                    if not number_gender:
+                        number_gender = word_to_declension
+                    inflected_word = word_to_declension.make_agree_with_number(float(number_data[0]))
+                    if inflected_word:
+                        inflected_words.append(inflected_word)
+                text = text.replace(number_string, ' '.join(inflected_words))
+            return text
 
-            inflected_words = []
+        def translit_text(self, text: str) -> str:
+            tag_empty_text = re.sub('<[^>]*>', '', text)
+            english_words = re.findall(r'[a-zA-Z]+', tag_empty_text)
+            for word in english_words:
+                result = translit(word, settings.language) #
+                text = text.replace(word, result)
+            return text
 
-            for i in range(1, len(number_data)):
-                if '<d>' not in number_data[i]:
-                    inflected_words.append(number_data[i])
-                    continue
-
-                word_to_declension = morph.parse(number_data[i][3:-4])[0]
-
-                if not number_gender:
-                    number_gender = word_to_declension.tag.gender
-
-                inflected_word = word_to_declension.make_agree_with_number(float(number_data[0]))
-
-                if inflected_word:
-                    word_to_declension = inflected_word
-
-                inflected_words.append(word_to_declension.word)
-
-            last_number_word = morph.parse(number.split(' ')[-1])[0]
-
-            if number_gender:
-                inclined_number = last_number_word.inflect({number_gender})
-
-                if inclined_number:
-                    numbers = number.split(' ')
-                    numbers.pop()
-                    numbers.append(inclined_number.word)
-                    number = ' '.join(numbers)
-
-            inflected_words.insert(0, number)
-            text = text.replace(number_string, ' '.join(inflected_words))
-
-        return text
-
-    def translit_text(text: str) -> str:
-        tag_empty_text = sub('<[^>]*>', '', text)
-        english_words = findall(r'[a-zA-Z]+', tag_empty_text)
-
-        for word in english_words:
-            result = translit(word, settings.language)
-            text = text.replace(word, result)
-
-        return text
-
-    def clean_text(text: str) -> str:
-        text = " ".join(text.split())
-        text = normalize_number(text)
-        #text = translit_text(text)
-
-        return text
-
-  # def clean_text(self, text):
-  #      # Remove asterisks, line breaks, and trailing periods
-   #     text = re.sub(r'[\*\r\n.]', '', text)
- #       # Replace double quotes with single quotes and correct punctuation around quotes
- #       text = re.sub(r'"\s?(.*?)\s?"', r"'\1'", text)
- #       return text
+        def normalize(self, text: str) -> str:
+            text = " ".join(text.split())
+            text = self.normalize_number(text)
+            text = self.translit_text(text)
+            text = self.normalize_date(text)
+            text = self.normalize_time(text)
+            return text
 
     async def stream_generation(self, text, speaker_name, speaker_wav, language, output_file):
         # Log time
@@ -588,7 +577,6 @@ class TTSWrapper:
 
         logger.info(f"Processing time: {generate_elapsed_time:.2f} seconds.")
 
-
     def api_generation(self, text, speaker_wav, language, output_file):
         self.model.tts_to_file(
             text=text,
@@ -623,5 +611,75 @@ class TTSWrapper:
 
         return speaker_wav
 
+    # MAIN FUNC
+    def process_tts_to_file(self, text, speaker_name_or_path, language, file_name_or_path="out.wav", stream=False):
+  #      set_pstate_high()
+        try:
+            speaker_wav = self.get_speaker_wav(speaker_name_or_path)
+            # Determine output path based on whether a full path or a file name was provided
+            if os.path.isabs(file_name_or_path):
+                # An absolute path was provided by user; use as is.
+                output_file = file_name_or_path
+            else:
+                # Only a filename was provided; prepend with output folder.
+                output_file = os.path.join(self.output_folder, file_name_or_path)
+
+            # Check if 'text' is a valid path to a '.txt' file.
+            if os.path.isfile(text) and text.lower().endswith('.txt'):
+                with open(text, 'r', encoding='utf-8') as f:
+                    text = f.read()
+
+            # Generate unic name for cached result
+            if self.enable_cache_results:
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                file_name_or_path = timestamp + "_cache_" + file_name_or_path
+                output_file = os.path.join(self.output_folder, file_name_or_path)
+
+            # Replace double quotes with single, asterisks, carriage returns, and line feeds
+            clear_text = self.clean_text(text)
+
+            # Generate a dictionary of the parameters to use for caching.
+            text_params = {
+                'text': clear_text,
+                'speaker_name_or_path': speaker_name_or_path,
+                'language': language
+            }
+
+            # Check if results are already cached.
+            cached_result = self.check_cache(text_params)
+
+            if cached_result is not None:
+                logger.info("Using cached result.")
+                return cached_result  # Return the path to the cached result.
+
+            self.switch_model_device()  # Load to CUDA if lowram ON
+
+            # Define generation if model via api or locally
+            if self.model_source == "local":
+                if stream:
+                    async def stream_fn():
+                        async for chunk in self.stream_generation(clear_text, speaker_name_or_path, speaker_wav,
+                                                                  language, output_file):
+                            yield chunk
+                        self.switch_model_device()
+                        # After generation completes successfully...
+                        self.update_cache(text_params, output_file)
+
+                    return stream_fn()
+                else:
+                    self.local_generation(clear_text, speaker_name_or_path, speaker_wav, language, output_file)
+            else:
+                self.api_generation(clear_text, speaker_wav, language, output_file)
+
+            self.switch_model_device()  # Unload to CPU if lowram ON
+
+            # After generation completes successfully...
+            self.update_cache(text_params, output_file)
+            torch.cuda.empty_cache()
+#            set_pstate_low()
+            return output_file
+
+        except Exception as e:
+            raise e  # Propagate exceptions for endpoint handling.
 
 
