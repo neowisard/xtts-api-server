@@ -464,60 +464,6 @@ class TTSWrapper:
       #  text = re.sub(r'"\s?(.*?)\s?"', r"'\1'", text)
         return cleaned_text
 
-    class DateTimeNormalizer:
-        def __init__(self, lang='ru'):
-            self.lang = lang
-
-        def normalize_date(self, text: str) -> str:
-            try:
-                date = parser.parse(text, fuzzy=True)
-                return date.strftime('%Y-%m-%d')
-            except ValueError:
-                return text
-
-        def normalize_time(self, text: str) -> str:
-            try:
-                time = parser.parse(text)
-                return time.strftime('%H:%M')
-            except ValueError:
-                return text
-
-        def normalize_number(self, text: str) -> str:
-            number_strings = re.findall(
-                r'(?<![a-zA-Z\d])\d+(?:\.\d+)?(?:(?:\s|\w)*?<d>.*?</d>)*(?!(?:[a-zA-Z\d\"\']|\s)*\'?/?>)', text)
-            for number_string in number_strings:
-                number_data = number_string.split(' ')
-                number = number_data[0]
-                number_gender = None
-                inflected_words = []
-                for i in range(1, len(number_data)):
-                    if '<d>' not in number_data[i]:
-                        inflected_words.append(number_data[i])
-                        continue
-                    word_to_declension = number_data[i][3:-4]
-                    if not number_gender:
-                        number_gender = word_to_declension
-                    inflected_word = word_to_declension.make_agree_with_number(float(number_data[0]))
-                    if inflected_word:
-                        inflected_words.append(inflected_word)
-                text = text.replace(number_string, ' '.join(inflected_words))
-            return text
-
-        def translit_text(self, text: str) -> str:
-            tag_empty_text = re.sub('<[^>]*>', '', text)
-            english_words = re.findall(r'[a-zA-Z]+', tag_empty_text)
-            for word in english_words:
-                result = translit(word, settings.language) #
-                text = text.replace(word, result)
-            return text
-
-        def normalize(self, text: str) -> str:
-            text = " ".join(text.split())
-            text = self.normalize_number(text)
-            text = self.translit_text(text)
-            text = self.normalize_date(text)
-            text = self.normalize_time(text)
-            return text
 
     async def stream_generation(self, text, speaker_name, speaker_wav, language, output_file):
         # Log time
@@ -683,3 +629,57 @@ class TTSWrapper:
             raise e  # Propagate exceptions for endpoint handling.
 
 
+    class DateTimeNormalizer:
+        def __init__(self, lang='ru'):
+            self.lang = lang
+
+        def normalize_date(self, text: str) -> str:
+            try:
+                date = parser.parse(text, fuzzy=True)
+                return date.strftime('%Y-%m-%d')
+            except ValueError:
+                return text
+
+        def normalize_time(self, text: str) -> str:
+            try:
+                time = parser.parse(text)
+                return time.strftime('%H:%M')
+            except ValueError:
+                return text
+
+        def normalize_number(self, text: str) -> str:
+            number_strings = re.findall(
+                r'(?<![a-zA-Z\d])\d+(?:\.\d+)?(?:(?:\s|\w)*?<d>.*?</d>)*(?!(?:[a-zA-Z\d\"\']|\s)*\'?/?>)', text)
+            for number_string in number_strings:
+                number_data = number_string.split(' ')
+                number = number_data[0]
+                number_gender = None
+                inflected_words = []
+                for i in range(1, len(number_data)):
+                    if '<d>' not in number_data[i]:
+                        inflected_words.append(number_data[i])
+                        continue
+                    word_to_declension = number_data[i][3:-4]
+                    if not number_gender:
+                        number_gender = word_to_declension
+                    inflected_word = word_to_declension.make_agree_with_number(float(number_data[0]))
+                    if inflected_word:
+                        inflected_words.append(inflected_word)
+                text = text.replace(number_string, ' '.join(inflected_words))
+            return text
+
+        def translit_text(self, text: str) -> str:
+            tag_empty_text = re.sub('<[^>]*>', '', text)
+            english_words = re.findall(r'[a-zA-Z]+', tag_empty_text)
+            for word in english_words:
+                result = translit(word, settings.language) #
+                text = text.replace(word, result)
+            return text
+
+        def normalize(self, text: str) -> str:
+            text = " ".join(text.split())
+            text = self.normalize_number(text)
+            text = self.translit_text(text)
+            text = self.normalize_date(text)
+            text = self.normalize_time(text)
+            return text
