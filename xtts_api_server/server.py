@@ -1,279 +1,177 @@
-from TTS.api import TTS
-from fastapi import BackgroundTasks, FastAPI, HTTPException, Request, Query
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, StreamingResponse
-
-
-from pydantic import BaseModel
-import uvicorn
-
-import os
-import time
 from pathlib import Path
-import shutil
-from loguru import logger
-from argparse import ArgumentParser
-from pathlib import Path
+from typing import Optional
 from uuid import uuid4
 
-from xtts_api_server.tts_funcs import TTSWrapper, supported_languages, InvalidSettingsError
-from xtts_api_server.RealtimeTTS import TextToAudioStream, CoquiEngine
-from xtts_api_server.modeldownloader import check_stream2sentence_version, install_deepspeed_based_on_python_version
+from pydantic import BaseModel
+from pydantic.types import Enum
+from xtts_api_server.tts_funcs import TTSWrapper, supported_languages
 
-# Default Folders , you can change them via API
-DEVICE = os.getenv('DEVICE', "cuda")
-OUTPUT_FOLDER = os.getenv('OUTPUT', 'output')
-SPEAKER_FOLDER = os.getenv('SPEAKER', 'speakers')
-MODEL_FOLDER = os.getenv('MODEL', 'models')
-BASE_HOST = os.getenv('BASE_URL', '127.0.0.1:5050')
-BASE_URL = os.getenv('BASE_URL', '127.0.0.1:5050')
-MODEL_SOURCE = os.getenv("MODEL_SOURCE", "local")
-MODEL_VERSION = os.getenv("MODEL_VERSION", "v2.0.3")
-LOWVRAM_MODE = os.getenv("LOWVRAM_MODE") == 'true'
-DEEPSPEED = os.getenv("DEEPSPEED") == 'true'
-USE_CACHE = os.getenv("USE_CACHE") == 'true'
-LANG = "ru"
-# STREAMING VARS
-STREAM_MODE = os.getenv("STREAM_MODE") == 'true'
-STREAM_MODE_IMPROVE = os.getenv("STREAM_MODE_IMPROVE") == 'true'
-STREAM_PLAY_SYNC = os.getenv("STREAM_PLAY_SYNC") == 'true'
-
-if (DEEPSPEED):
-    install_deepspeed_based_on_python_version()
-
-# Create an instance of the TTSWrapper class and server
-app = FastAPI()
-XTTS = TTSWrapper(OUTPUT_FOLDER, SPEAKER_FOLDER, MODEL_FOLDER, LOWVRAM_MODE, MODEL_SOURCE, MODEL_VERSION, DEVICE,
-                  DEEPSPEED, USE_CACHE)
-
-# Check for old format model version
-XTTS.model_version = XTTS.check_model_version_old_format(MODEL_VERSION)
-MODEL_VERSION = XTTS.model_version
-
-# Create version string
-version_string = ""
-if MODEL_SOURCE == "api" or MODEL_VERSION == "main":
-    version_string = "lastest"
-else:
-    version_string = MODEL_VERSION
-
-# Load model
-if STREAM_MODE or STREAM_MODE_IMPROVE:
-    # Load model for Streaming
-    check_stream2sentence_version()
-
-    logger.warning(
-        "'Streaming Mode' has certain limitations, you can read about them here https://github.com/daswer123/xtts-api-server#about-streaming-mode")
-
-    if STREAM_MODE_IMPROVE:
-        logger.info(
-            "You launched an improved version of streaming, this version features an improved tokenizer and more context when processing sentences, which can be good for complex languages like Chinese")
-
-    model_path = XTTS.model_folder
-
-    engine = CoquiEngine(specific_model=MODEL_VERSION, use_deepspeed=DEEPSPEED, local_models_path=str(model_path))
-    stream = TextToAudioStream(engine)
-else:
-    logger.info(f"Model: '{version_string}' starts to load,wait until it loads")
-    XTTS.load_model()
-
-if USE_CACHE:
-    logger.info(
-        "You have enabled caching, this option enables caching of results, your results will be saved and if there is a repeat request, you will get a file instead of generation")
-
-# Add CORS middleware
-origins = ["*"]
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Define the SynthesisRequest model
+class SynthesisRequest(BaseModel):
+    input: str
+    voice: str
+    language: Optional[str] = None  # Optional field, default value is None
 
 
-# Help funcs
-def play_stream(stream, language):
-    if STREAM_MODE_IMPROVE:
-        # Here we define common arguments in a dictionary for DRY principle
-        play_args = {
-            'minimum_sentence_length': 2,
-            'minimum_first_fragment_length': 2,
-            'tokenizer': "stanza",
-            'language': language,
-            'context_size': 2
-        }
-        if STREAM_PLAY_SYNC:
-            # Play synchronously
-            stream.play(**play_args)
-        else:
-            # Play asynchronously
-            stream.play_async(**play_args)
-    else:
-        # If not improve mode just call the appropriate method based on sync_play flag.
-        if STREAM_PLAY_SYNC:
-            stream.play()
-        else:
-            stream.play_async()
+# Define the SynthesisFileRequest model
+class SynthesisFileRequest(BaseModel):
+    input: str
+    voice: str
+    language: Optional[str] = None
+    file_name_or_path: str
 
 
-class OutputFolderRequest(BaseModel):
-    output_folder: str
-
-
-class SpeakerFolderRequest(BaseModel):
-    speaker_folder: str
-
-
+# Define the ModelNameRequest model
 class ModelNameRequest(BaseModel):
     model_name: str
 
 
+# Define the TTSSettingsRequest model
 class TTSSettingsRequest(BaseModel):
-    stream_chunk_size: int
-    temperature: float
     speed: float
-    length_penalty: float
-    repetition_penalty: float
-    top_p: float
-    top_k: int
-    enable_text_splitting: bool
+    pitch: float
+    emotion: str
+    emotion_strength: float
+    volume: float
+    enable_emoji: bool
+    voice_3d: str
 
 
-class SynthesisRequest(BaseModel):
+# Define the OutputFolderRequest model
+class OutputFolderRequest(BaseModel):
+    output_folder: str
+
+
+# Define the SpeakerFolderRequest model
+class SpeakerFolderRequest(BaseModel):
+    speaker_folder: str
+
+# Define the AudioFormatEnum for the tts_file_request
+class AudioFormatEnum(str, Enum):
+    WAV = "wav"
+    MP3 = "mp3"
+
+# Define the AudioQualityEnum for the tts_file_request
+class AudioQualityEnum(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+# Define the tts_file_request model
+class tts_file_request(BaseModel):
     input: str
     voice: str
-#    language: str
-
-
-class SynthesisFileRequest(BaseModel):
-    input: str
-    voice: str
-#    language: str
+    language: Optional[str] = None
     file_name_or_path: str
+    format: Optional[AudioFormatEnum] = AudioFormatEnum.WAV
+    quality: Optional[AudioQualityEnum] = AudioQualityEnum.HIGH
 
+# Define the ModelVersionRequest model
+class ModelVersionRequest(BaseModel):
+    model_version: str
 
-@app.get("/speakers_list")
-def get_speakers():
-    speakers = XTTS.get_speakers()
-    return speakers
+# Define the TextToAudioRequest model
+class TextToAudioRequest(BaseModel):
+    text: str
+    speaker_wav: str
+    language: str
 
+# Define the StreamingOptionsRequest model
+class StreamingOptionsRequest(BaseModel):
+    minimum_sentence_length: int
+    minimum_first_fragment_length: int
+    tokenizer: str
+    language: str
+    context_size: int
 
-@app.get("/speakers")
-def get_speakers():
-    speakers = XTTS.get_speakers_special()
-    return speakers
+# Define the PlayModeRequest model
+class PlayModeRequest(BaseModel):
+    play_mode: bool
 
+# Define the StreamModeRequest model
+class StreamModeRequest(BaseModel):
+    stream_mode: bool
 
-@app.get("/languages")
-def get_languages():
-    languages = XTTS.list_languages()
-    return {"languages": languages}
+# Define the UseCacheRequest model
+class UseCacheRequest(BaseModel):
+    use_cache: bool
 
+# Define the ModelSourceRequest model
+class ModelSourceRequest(BaseModel):
+    model_source: str
 
-@app.get("/get_folders")
-def get_folders():
-    speaker_folder = XTTS.speaker_folder
-    output_folder = XTTS.output_folder
-    model_folder = XTTS.model_folder
-    return {"speaker_folder": speaker_folder, "output_folder": output_folder, "model_folder": model_folder}
+# Define the ModelVersionRequest model
+class ModelVersionRequest(BaseModel):
+    model_version: str
 
+# Define the DeviceRequest model
+class DeviceRequest(BaseModel):
+    device: str
 
-@app.get("/get_models_list")
-def get_models_list():
-    return XTTS.get_models_list()
+# Define the LowVRAMModeRequest model
+class LowVRAMModeRequest(BaseModel):
+    low_vram_mode: bool
 
+# Define the DeepSpeedRequest model
+class DeepSpeedRequest(BaseModel):
+    deepspeed: bool
 
-@app.get("/get_tts_settings")
-def get_tts_settings():
-    settings = {**XTTS.tts_settings, "stream_chunk_size": XTTS.stream_chunk_size}
-    return settings
+# Define the BaseURLRequest model
+class BaseURLRequest(BaseModel):
+    base_url: str
 
+# Define the OutputFolderRequest model
+class OutputFolderRequest(BaseModel):
+    output_folder: str
 
-@app.get("/sample/{file_name:path}")
-def get_sample(file_name: str):
-    # A fix for path traversal vulenerability.
-    # An attacker may summon this endpoint with ../../etc/passwd and recover the password file of your PC (in linux) or access any other file on the PC
-    if ".." in file_name:
-        raise HTTPException(status_code=404, detail=".. in the file name! Are you kidding me?")
-    file_path = os.path.join(XTTS.speaker_folder, file_name)
-    if os.path.isfile(file_path):
-        return FileResponse(file_path, media_type="audio/wav")
-    else:
-        logger.error("File not found")
-        raise HTTPException(status_code=404, detail="File not found")
+# Define the SpeakerFolderRequest model
+class SpeakerFolderRequest(BaseModel):
+    speaker_folder: str
 
+# Define the ModelFolderRequest model
+class ModelFolderRequest(BaseModel):
+    model_folder: str
 
-@app.post("/set_output")
-def set_output(output_req: OutputFolderRequest):
-    try:
-        XTTS.set_out_folder(output_req.output_folder)
-        return {"message": f"Output folder set to {output_req.output_folder}"}
-    except ValueError as e:
-        logger.error(e)
-        raise HTTPException(status_code=400, detail=str(e))
+# Define the LANGRequest model
+class LANGRequest(BaseModel):
+    lang: str
 
+# Define the StreamModeRequest model
+class StreamModeRequest(BaseModel):
+    stream_mode: bool
 
-@app.post("/set_speaker_folder")
-def set_speaker_folder(speaker_req: SpeakerFolderRequest):
-    try:
-        XTTS.set_speaker_folder(speaker_req.speaker_folder)
-        return {"message": f"Speaker folder set to {speaker_req.speaker_folder}"}
-    except ValueError as e:
-        logger.error(e)
-        raise HTTPException(status_code=400, detail=str(e))
+# Define the StreamModeImproveRequest model
+class StreamModeImproveRequest(BaseModel):
+    stream_mode_improve: bool
 
+# Define the StreamPlaySyncRequest model
+class StreamPlaySyncRequest(BaseModel):
+    stream_play_sync: bool
 
-@app.post("/switch_model")
-def switch_model(modelReq: ModelNameRequest):
-    try:
-        XTTS.switch_model(modelReq.model_name)
-        return {"message": f"Model switched to {modelReq.model_name}"}
-    except InvalidSettingsError as e:
-        logger.error(e)
-        raise HTTPException(status_code=400, detail=str(e))
+# Define the InstallDeepspeedBasedOnPythonVersionRequest model
+class InstallDeepspeedBasedOnPythonVersionRequest(BaseModel):
+    install_deepspeed_based_on_python_version: bool
 
+# Define the CheckStream2sentenceVersionRequest model
+class CheckStream2sentenceVersionRequest(BaseModel):
+    check_stream2sentence_version: bool
 
-@app.post("/set_tts_settings")
-def set_tts_settings_endpoint(tts_settings_req: TTSSettingsRequest):
-    try:
-        XTTS.set_tts_settings(**tts_settings_req.dict())
-        return {"message": "Settings successfully applied"}
-    except InvalidSettingsError as e:
-        logger.error(e)
-        raise HTTPException(status_code=400, detail=str(e))
+# Define the CoquiEngineRequest model
+class CoquiEngineRequest(BaseModel):
+    specific_model: str
+    use_deepspeed: bool
+    local_models_path: str
 
+# Define the TextToAudioStreamRequest model
+class TextToAudioStreamRequest(BaseModel):
+    engine: CoquiEngineRequest
+    specific_model: str
+    use_deepspeed: bool
+    local_models_path: str
 
-@app.get('/tts_stream')
-async def tts_stream(request: Request, text: str = Query(), speaker_wav: str = Query(), language: str = Query()):
-    # Validate local model source.
-
-    if XTTS.model_source != "local":
-        raise HTTPException(status_code=400,
-                            detail="HTTP Streaming is only supported for local models.")
-    # Validate language code against supported languages.
-    #if language.lower() not in supported_languages:
-    #    raise HTTPException(status_code=400,
-    #                        detail="Language code sent is either unsupported or misspelled.")
-
-    async def generator():
-        chunks = XTTS.process_tts_to_file(
-            text=text,
-            speaker_name_or_path=speaker_wav,
-            language=LANG.lower(),
-            stream=True,
-        )
-        # Write file header to the output stream.
-        yield XTTS.get_wav_header()
-        async for chunk in chunks:
-            # Check if the client is still connected.
-            disconnected = await request.is_disconnected()
-            if disconnected:
-                break
-            yield chunk
-
-    return StreamingResponse(generator(), media_type='audio/x-wav')
-
+# Define the OutputFolderRequest model
+class OutputFolderRequest(BaseModel):
+    output_folder: str
 
 @app.post("/v1/audio/speech")
 async def tts_to_audio(request: SynthesisRequest, background_tasks: BackgroundTasks):
