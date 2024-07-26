@@ -146,10 +146,10 @@ class DateTimeNormalizer:
 
     def normalize(self, text: str) -> str:
         text = " ".join(text.split())
-        text = self.normalize_number(text)
+        #text = self.normalize_number(text)
         #text = self.translit_text(text)
-        #text = self.normalize_date(text)
-        #text = self.normalize_time(text)
+        text = self.normalize_date(text)
+        text = self.normalize_time(text)
         return text
 
 
