@@ -452,7 +452,7 @@ class TTSWrapper:
         return reversed_supported_languages
 
     # GENERATION FUNCS
-    morph = MorphAnalyzer(lang=LANG.lower)
+    morph = MorphAnalyzer(lang=language)
 
     def normalize_date(text: str) -> str:
         return text

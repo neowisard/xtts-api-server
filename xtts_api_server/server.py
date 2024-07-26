@@ -61,7 +61,7 @@ class AudioQualityEnum(str, Enum):
 class tts_file_request(BaseModel):
     input: str
     voice: str
-    language: Optional[str] = None
+    language: Optional[str] = "ru"
     file_name_or_path: str
     format: Optional[AudioFormatEnum] = AudioFormatEnum.WAV
     quality: Optional[AudioQualityEnum] = AudioQualityEnum.HIGH
