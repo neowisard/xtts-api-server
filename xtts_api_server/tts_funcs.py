@@ -4,7 +4,7 @@ import torch
 import torchaudio
 from nvidia_pstate import set_pstate_low, set_pstate_high
 from re import findall, sub
-from pymorphy2 import MorphAnalyzer
+from pymorphy3 import MorphAnalyzer
 from transliterate import translit
 from num2words import num2words
 from dateutil import parser
