@@ -70,7 +70,7 @@ official_model_list = ["v2.0.0", "v2.0.1", "v2.0.2", "v2.0.3", "main"]
 official_model_list_v2 = ["2.0.0", "2.0.1", "2.0.2", "2.0.3"]
 
 reversed_supported_languages = {name: code for code, name in supported_languages.items()}
-
+morph = MorphAnalyzer()
 
 class DateTimeNormalizer:
     def __init__(self, lang='ru'):
@@ -91,7 +91,7 @@ class DateTimeNormalizer:
             return text  # Возвращаем исходное значение, если не удалось распарсить время
 
     def normalize_number(text: str) -> str:
-        number_strings = findall(
+        number_strings = re.findall(
             r'(?<![a-zA-Z\d])\d+(?:\.\d+)?(?:(?:\s|\w)*?<d>.*?</d>)*(?!(?:[a-zA-Z\d\"\']|\s)*\'?/?>)',
             text)
 
