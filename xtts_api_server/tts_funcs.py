@@ -32,7 +32,7 @@ import numpy as np
 class InvalidSettingsError(Exception):
     pass
 
-
+LANG="ru"
 # List of supported language codes
 supported_languages = {
     "ar": "Arabic",
