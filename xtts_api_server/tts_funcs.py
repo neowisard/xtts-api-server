@@ -140,16 +140,16 @@ class DateTimeNormalizer:
         tag_empty_text = re.sub('<[^>]*>', '', text)
         english_words = re.findall(r'[a-zA-Z]+', tag_empty_text)
         for word in english_words:
-            result = translit(word, settings.language)  #
+            result = translit(word, 'ru')  #
             text = text.replace(word, result)
         return text
 
     def normalize(self, text: str) -> str:
         text = " ".join(text.split())
         #text = self.normalize_number(text)
-        text = self.translit_text(text)
-        text = self.normalize_date(text)
-        text = self.normalize_time(text)
+        #text = self.translit_text(text)
+        #text = self.normalize_date(text)
+        #text = self.normalize_time(text)
         return text
 
 
@@ -537,13 +537,13 @@ class TTSWrapper:
     # GENERATION TEXT FUNCS
     def clean_text(self, text):
         # Remove asterisks, line breaks, and trailing periods
-        normalizer = DateTimeNormalizer()
-        cleaned_text = normalizer.normalize(text)
+        #normalizer = DateTimeNormalizer()
+        #cleaned_text = normalizer.normalize(text)
 
-      #  text = re.sub(r'[\*\r\n.]', '', text)
-      #  # Replace double quotes with single quotes and correct punctuation around quotes
-      #  text = re.sub(r'"\s?(.*?)\s?"', r"'\1'", text)
-        return cleaned_text
+        text = re.sub(r'[\*\r\n]', '', text)
+        # Replace double quotes with single quotes and correct punctuation around quotes
+        text = re.sub(r'"\s?(.*?)\s?"', r"'\1'", text)
+        return text
 
 
     async def stream_generation(self, text, speaker_name, speaker_wav, language, output_file):
