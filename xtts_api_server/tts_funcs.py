@@ -98,7 +98,7 @@ class DateTimeNormalizer:
         for number_string in number_strings:
             number_data = number_string.split(' ')
 
-            number = num2words(number_data[0], lang=settings.language)
+            number = num2words(number_data[0], lang='ru')
             number_gender = None
 
             inflected_words = []
@@ -147,7 +147,7 @@ class DateTimeNormalizer:
     def normalize(self, text: str) -> str:
         text = " ".join(text.split())
         text = self.normalize_number(text)
-        #text = self.translit_text(text)
+        text = self.translit_text(text)
         text = self.normalize_date(text)
         text = self.normalize_time(text)
         return text
