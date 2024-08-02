@@ -537,12 +537,12 @@ class TTSWrapper:
     # GENERATION TEXT FUNCS
     def clean_text(self, text):
         # Remove asterisks, line breaks, and trailing periods
-        #normalizer = DateTimeNormalizer()
-        #cleaned_text = normalizer.normalize(text)
-
         text = re.sub(r'[\*\r\n]', '', text)
         # Replace double quotes with single quotes and correct punctuation around quotes
         text = re.sub(r'"\s?(.*?)\s?"', r"'\1'", text)
+
+        # Remove trailing period if it exists
+        text = re.sub(r'\.$', '', text)
         return text
 
 
@@ -703,7 +703,6 @@ class TTSWrapper:
             # After generation completes successfully...
             self.update_cache(text_params, output_file)
             torch.cuda.empty_cache()
-#            set_pstate_low()
             return output_file
 
         except Exception as e:
